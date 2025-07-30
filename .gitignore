@@ -1,0 +1,6 @@
+.git
+*.pyc
+__pycache__
+Grasscutter-Res-Origin
+GCG-Res-Output
+GCG-Res-Origin
