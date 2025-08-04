@@ -4,6 +4,11 @@ import argparse
 from tqdm import tqdm
 from loguru import logger
 
+# 配置Loguru日志
+logger.remove() # 移除默认的控制台输出
+logger.add(sys.stderr, level="ERROR") # 控制台只显示ERROR及以上等级的日志
+logger.add("log.txt", level="DEBUG") # 记录DEBUG级别日志到log.txt
+
 def normalize_path(path):
     """统一路径格式，处理Windows路径问题"""
     return os.path.normpath(path.strip())
