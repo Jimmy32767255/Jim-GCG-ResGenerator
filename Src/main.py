@@ -1,4 +1,6 @@
 import os
+import sys
+import argparse
 from tqdm import tqdm
 from loguru import logger
 
@@ -42,30 +44,11 @@ from SceneTag import generate_gcg_res_scene_tag
 from WeaponColor import generate_gcg_res_weapon_color
 from Weather import generate_gcg_res_weather
 
-def main():
+def generate_resources_core(output_dir, grasscutter_res_origin_path, gcg_res_origin_path):
     logger.info("开始生成所有GCG资源文件...")
-
-    # 定义路径（添加路径规范化处理）
-    logger.info("请输入GCG-Res-Output目录的路径：")
-    output_dir = normalize_path(input("GCG-Res-Output目录路径: "))
-    if not output_dir:
-        logger.error("未输入GCG-Res-Output目录，程序退出")
-        return
-    
-    logger.info("请输入Grasscutter-Res-Origin目录的路径：")
-    grasscutter_res_origin_path = normalize_path(input("Grasscutter-Res-Origin目录路径: "))
-    if not grasscutter_res_origin_path:
-        logger.error("未输入Grasscutter-Res-Origin目录，程序退出")
-        return
 
     excel_bin_output_path = os.path.join(grasscutter_res_origin_path, "ExcelBinOutput")
     text_map_root_path = os.path.join(grasscutter_res_origin_path, "TextMap")
-
-    logger.info("请输入GCG-Res-Origin目录的路径：")
-    gcg_res_origin_path = normalize_path(input("GCG-Res-Origin目录路径: "))
-    if not gcg_res_origin_path:
-        logger.error("未输入GCG-Res-Origin目录，程序退出")
-        return
 
     # 确保输出目录存在
     os.makedirs(output_dir, exist_ok=True)
@@ -182,5 +165,42 @@ def main():
 
     logger.info("\n所有GCG资源文件生成和复制完成。")
 
+def main():
+    logger.info("开始生成所有GCG资源文件...")
+
+    # 定义路径（添加路径规范化处理）
+    logger.info("请输入GCG-Res-Output目录的路径：")
+    output_dir = normalize_path(input("GCG-Res-Output目录路径: "))
+    if not output_dir:
+        logger.error("未输入GCG-Res-Output目录，程序退出")
+        return
+    
+    logger.info("请输入Grasscutter-Res-Origin目录的路径：")
+    grasscutter_res_origin_path = normalize_path(input("Grasscutter-Res-Origin目录路径: "))
+    if not grasscutter_res_origin_path:
+        logger.error("未输入Grasscutter-Res-Origin目录，程序退出")
+        return
+
+    logger.info("请输入GCG-Res-Origin目录的路径：")
+    gcg_res_origin_path = normalize_path(input("GCG-Res-Origin目录路径: "))
+    if not gcg_res_origin_path:
+        logger.error("未输入GCG-Res-Origin目录，程序退出")
+        return
+    
+    generate_resources_core(output_dir, grasscutter_res_origin_path, gcg_res_origin_path)
+
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="GCG资源生成器")
+    parser.add_argument('-C', '--cli', action='store_true', help='以命令行模式运行')
+    args = parser.parse_args()
+
+    if args.cli:
+        main()
+    else:
+        from gui import GCGResGeneratorGUI
+        from PyQt5.QtWidgets import QApplication
+        app = QApplication(sys.argv)
+        window = GCGResGeneratorGUI()
+        window.show()
+        sys.exit(app.exec_())
