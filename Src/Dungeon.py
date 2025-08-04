@@ -2,7 +2,7 @@ import os
 import json
 from loguru import logger
 
-def generate_gcg_res_dungeon(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_dungeon(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Dungeon.txt 文件，包含地牢ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -52,9 +52,20 @@ def generate_gcg_res_dungeon(output_dir, excel_bin_output_path, text_map_file_pa
         dungeon_id = entry.get("id")
         name_text_map_hash = entry.get("nameTextMapHash")
 
+        # 检查是否跳过无Json名称资源
+        if not_generate_no_json_name_res and not name_text_map_hash:
+            logger.warning(f"跳过地牢ID: {dungeon_id}，因为它没有 Json 名称。")
+            continue
+
         # 获取地牢名称，如果不存在则使用默认值
         dungeon_name = text_map.get(str(name_text_map_hash))
-        if dungeon_name is None:
+
+        # 检查是否跳过无正式名称资源
+        if not_generate_no_text_map_name_res and not dungeon_name:
+            logger.warning(f"跳过地牢ID: {dungeon_id}，因为它没有正式名称。")
+            continue
+
+        if not dungeon_name:
             dungeon_name = f"[N/A] {name_text_map_hash}"
         dungeon_entries.append(f"{dungeon_id}:{dungeon_name}")
 

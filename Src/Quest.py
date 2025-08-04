@@ -2,7 +2,7 @@ import os
 import json
 from loguru import logger
 
-def generate_gcg_res_quest(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_quest(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Quest.txt 文件，包含任务ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -53,8 +53,22 @@ def generate_gcg_res_quest(output_dir, excel_bin_output_path, text_map_file_path
                 quest_id = item.get("subId")
                 title_text_map_hash = item.get("descTextMapHash")
 
+                # 根据 not_generate_no_json_name_res 跳过没有 Json 名称的资源
+                if not_generate_no_json_name_res and not title_text_map_hash:
+                    logger.warning(f"跳过任务ID: {quest_id}，因为它没有 Json 名称。")
+                    continue
+
                 # 获取任务名称，如果不存在则使用默认值
-                title = text_map.get(str(title_text_map_hash), f"[N/A] {title_text_map_hash}")
+                title = text_map.get(str(title_text_map_hash))
+
+                # 根据 not_generate_no_text_map_name_res 跳过没有正式名称的资源
+                if not_generate_no_text_map_name_res and not title:
+                    logger.warning(f"跳过任务ID: {quest_id}，因为它没有正式名称。")
+                    continue
+
+                if not title:
+                    title = f"[N/A] {title_text_map_hash}"
+
                 f.write(f"{quest_id}:{title}\n")
         logger.info(f"成功生成 {output_file_path} 文件")
     except IOError as e:

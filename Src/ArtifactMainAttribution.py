@@ -2,7 +2,9 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_artifact_main_attribution(output_dir, excel_bin_output_path, text_map_file_path):
+import json
+
+def generate_gcg_res_artifact_main_attribution(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 ArtifactMainAttribution.txt 文件，包含圣遗物主属性ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -52,8 +54,18 @@ def generate_gcg_res_artifact_main_attribution(output_dir, excel_bin_output_path
         artifact_main_attribution_id = item.get('id')
         prop_type = item.get('propType')
 
+        # 检查是否跳过无Json名称资源 (这里propType是直接从json获取，所以直接检查其是否存在)
+        if not_generate_no_json_name_res and not prop_type:
+            logger.warning(f"跳过圣遗物主属性ID: {artifact_main_attribution_id}，因为它没有 Json 名称。")
+            continue
+
         # propType 字段通常是字符串，直接作为名称
         name = prop_type
+
+        # 检查是否跳过无正式名称资源 (这里name就是propType，所以检查name即可)
+        if not_generate_no_text_map_name_res and not name:
+            logger.warning(f"跳过圣遗物主属性ID: {artifact_main_attribution_id}，因为它没有正式名称。")
+            continue
 
         if not name:
             name = f"[N/A] {prop_type}"

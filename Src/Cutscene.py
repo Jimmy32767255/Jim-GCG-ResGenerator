@@ -2,7 +2,7 @@ import os
 import json
 from loguru import logger
 
-def generate_gcg_res_cutscene(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_cutscene(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Cutscene.txt 文件，包含过场动画ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -56,7 +56,16 @@ def generate_gcg_res_cutscene(output_dir, excel_bin_output_path, text_map_file_p
                 if cutscene_id is not None:
                     # 获取过场动画名称，如果不存在则使用默认值
                     # 由于CutsceneExcelConfigData.json中没有titleTextMapHash，我们使用path字段作为名称
-                    cutscene_name = cutscene_path if cutscene_path is not None else f"[N/A] {cutscene_id}"
+                    cutscene_name = cutscene_path
+                    if not cutscene_name:
+                        if not_generate_no_json_name_res:
+                            logger.warning(f"跳过生成无Json名称的过场动画资源: {cutscene_id}")
+                            continue
+                        cutscene_name = f"[N/A] {cutscene_id}"
+                    # 对于过场动画，名称直接从path字段获取，所以不需要从text_map中获取
+                    # if not cutscene_name and not_generate_no_text_map_name_res:
+                    #     logger.warning(f"跳过生成无正式名称的过场动画资源: {cutscene_id}")
+                    #     continue
                     f.write(f"{cutscene_id}:{cutscene_name}\n")
         logger.info(f"成功生成 {output_file_path} 文件")
     except IOError as e:

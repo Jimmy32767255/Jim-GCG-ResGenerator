@@ -1,11 +1,14 @@
 import os
 from loguru import logger
 
-def generate_gcg_res_scene_tag(output_dir, scene_tag_file):
+def generate_gcg_res_scene_tag(output_dir, scene_tag_file, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 SceneTag.txt 文件，复制指定文件的内容。
     """
     logger.info("开始生成 SceneTag.txt 文件...")
+
+    if not_generate_no_json_name_res or not_generate_no_text_map_name_res:
+        logger.warning("SceneTag.py 不涉及 json_name 或 text_map 的处理，'不生成无Json名称资源' 或 '不生成无正式名称资源' 参数在此处无效。")
     output_file = os.path.join(output_dir, "SceneTag.txt")
 
     try:

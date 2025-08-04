@@ -2,7 +2,7 @@ import os
 import json
 from loguru import logger
 
-def generate_gcg_res_artifact_cat(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_artifact_cat(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 ArtifactCat.txt 文件，包含圣遗物套装ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -52,8 +52,19 @@ def generate_gcg_res_artifact_cat(output_dir, excel_bin_output_path, text_map_fi
         artifact_cat_id = item.get('setId')
         name_text_map_hash = item.get('equipAffixId')
 
+        # 检查是否跳过无Json名称资源
+        if not_generate_no_json_name_res and not name_text_map_hash:
+            logger.warning(f"跳过圣遗物套装ID: {artifact_cat_id}，因为缺少Json名称且 '不生成无Json名称资源' 已启用")
+            continue
+
         # 获取圣遗物套装名称，如果不存在则使用默认值
         name = text_map.get(str(name_text_map_hash))
+
+        # 检查是否跳过无正式名称资源
+        if not_generate_no_text_map_name_res and not name:
+            logger.warning(f"跳过圣遗物套装ID: {artifact_cat_id}，因为它没有正式名称。")
+            continue
+
         if not name:
             name = f"[N/A] {name_text_map_hash}"
         

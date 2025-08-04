@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Avatar.txt 文件，包含角色ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -30,15 +30,15 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
     try:
         with open(os.path.join(text_map_file_path), 'r', encoding='latin-1') as f:
             text_map = json.load(f)
-        logger.info(f"成功读取文本映射文件: {os.path.join(text_map_file_path, 'TextMapCHS.json')}")
+        logger.info(f"成功读取文本映射文件: {os.path.join(text_map_file_path, 'TextMap.json')}")
     except FileNotFoundError:
-        logger.error(f"错误：未找到文本映射文件 {os.path.join(text_map_file_path, 'TextMapCHS.json')}")
+        logger.error(f"错误：未找到文本映射文件 {os.path.join(text_map_file_path, 'TextMap.json')}")
         return
     except json.JSONDecodeError:
-        logger.error(f"错误：文本映射文件 {os.path.join(text_map_file_path, 'TextMapCHS.json')} 不是有效的 JSON 格式")
+        logger.error(f"错误：文本映射文件 {os.path.join(text_map_file_path, 'TextMap.json')} 不是有效的 JSON 格式")
         return
     except Exception as e:
-        logger.error(f"读取文本映射文件 {os.path.join(text_map_file_path, 'TextMapCHS.json')} 失败: {e}")
+        logger.error(f"读取文本映射文件 {os.path.join(text_map_file_path, 'TextMap.json')} 失败: {e}")
         return
 
     output_lines = []
@@ -49,6 +49,9 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
         # 获取角色名称，如果不存在则使用默认值
         name = text_map.get(str(name_text_map_hash))
         if not name:
+            if not_generate_no_text_map_name_res:
+                logger.warning(f"跳过生成无正式名称的角色资源: {avatar_id}")
+                continue
             name = f"[N/A] {name_text_map_hash}"
         
         output_lines.append(f"{avatar_id}:{name}")

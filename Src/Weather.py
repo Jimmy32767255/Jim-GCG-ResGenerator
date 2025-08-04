@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_weather(output_dir, excel_bin_output_path):
+def generate_gcg_res_weather(output_dir, excel_bin_output_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Weather.txt 文件，包含天气区域ID和对应的名称。
     """
@@ -36,8 +36,21 @@ def generate_gcg_res_weather(output_dir, excel_bin_output_path):
         weather_area_id = item.get('weatherAreaId')
         weather_name = item.get('profileName')
 
-        if weather_area_id is not None and weather_name:
-            output_lines.append(f"{weather_area_id}:{weather_name}")
+        # 检查是否跳过无Json名称资源
+        if not_generate_no_json_name_res and not weather_name:
+            logger.warning(f"跳过天气区域ID: {weather_area_id}，因为它没有 Json 名称。")
+            continue
+            
+        # 检查是否跳过无正式名称资源
+        if not_generate_no_text_map_name_res and not weather_name:
+            logger.warning(f"跳过天气区域ID: {weather_area_id}，因为它没有正式名称。")
+            continue
+            
+        if weather_area_id is not None:
+            if weather_name:
+                output_lines.append(f"{weather_area_id}:{weather_name}")
+            elif not not_generate_no_json_name_res and not not_generate_no_text_map_name_res:
+                output_lines.append(f"{weather_area_id}:[N/A]")
 
     output_file_path = os.path.join(output_dir, "Weather.txt")
     try:

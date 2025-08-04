@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_achievement(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_achievement(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Achievement.txt 文件，包含成就ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -55,14 +55,23 @@ def generate_gcg_res_achievement(output_dir, excel_bin_output_path, text_map_fil
         item_id = item.get('id')
         title_text_map_hash = item.get('titleTextMapHash')
 
-        # 尝试从 TextMapCHS 中查找对应 ID 的名称
+        # 尝试从 TextMap 中查找对应 ID 的名称
         name = None
         if title_text_map_hash is not None:
             name = text_map.get(str(title_text_map_hash))
 
-        # 如果没有找到，则使用默认值
+        # 尝试从 TextMap 中查找对应 ID 的名称
+        name = None
+        if title_text_map_hash is not None:
+            name = text_map.get(str(title_text_map_hash))
+
+        # 如果没有找到，则根据参数决定是否跳过
         if not name:
-            name = f"[N/A] {title_text_map_hash}"
+            if not_generate_no_text_map_name_res:
+                logger.warning(f"警告：成就 ID {item_id} 没有找到对应的文本映射名称，已跳过。")
+                continue
+            else:
+                name = f"[N/A] {title_text_map_hash}"
 
         output_lines.append(f"{item_id}:{name}")
 

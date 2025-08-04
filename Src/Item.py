@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res=False, not_generate_no_text_map_name_res=False):
     """
     生成 Item.txt 文件，包含物品ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -55,11 +55,20 @@ def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path)
 
         name = text_map.get(str(name_text_map_hash))
 
+        # 检查是否跳过无Json名称资源
+        if not_generate_no_json_name_res and (name_text_map_hash is None or not name):
+            logger.warning(f"跳过物品 {item_id} (无Json名称资源)")
+            continue
+
+        # 检查是否跳过无正式名称资源
+        if not_generate_no_text_map_name_res and (name is None or name.strip() == "" or name.startswith("[N/A]")):
+            logger.warning(f"跳过物品 {item_id} (无正式名称资源)")
+            continue
+
         if not name:
             name = f"[N/A] {name_text_map_hash}"
 
-        if name:
-            output_lines.append(f"{item_id}:{name}")
+        output_lines.append(f"{item_id}:{name}")
 
     try:
         with open(output_file_path, 'w', encoding='latin-1') as f:

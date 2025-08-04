@@ -2,9 +2,9 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
-    生成 Gadget.txt 文件，包含小工具ID和对应的中文名称。
+    生成 Gadget.txt 文件，包含实体ID和对应的中文名称。
     如果名称不存在，则使用默认值。
     """
     logger.info("开始生成 Gadget.txt 文件...")
@@ -22,15 +22,15 @@ def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_pat
     try:
         with open(gadget_data_file_path, 'r', encoding='latin-1') as f:
             gadget_excel_config_data = json.load(f)
-        logger.info(f"成功读取小工具数据文件: {gadget_data_file_path}")
+        logger.info(f"成功读取实体数据文件: {gadget_data_file_path}")
     except FileNotFoundError:
-        logger.error(f"错误：未找到小工具数据文件 {gadget_data_file_path}")
+        logger.error(f"错误：未找到实体数据文件 {gadget_data_file_path}")
         return
     except json.JSONDecodeError:
-        logger.error(f"错误：小工具数据文件 {gadget_data_file_path} 不是有效的 JSON 格式")
+        logger.error(f"错误：实体数据文件 {gadget_data_file_path} 不是有效的 JSON 格式")
         return
     except Exception as e:
-        logger.error(f"读取小工具数据文件 {gadget_data_file_path} 失败: {e}")
+        logger.error(f"读取实体数据文件 {gadget_data_file_path} 失败: {e}")
         return
 
     try:
@@ -55,19 +55,25 @@ def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_pat
         interact_name_text_map_hash = item.get('interactNameTextMapHash')
 
         name = None
-        # 尝试从 TextMapCHS 中查找对应 ID 的名称
+        # 尝试从 TextMap 中查找对应 ID 的名称
         if interact_name_text_map_hash is not None:
             name = text_map.get(str(interact_name_text_map_hash))
 
         # 如果没有找到，则使用 GECD 中的 jsonName
-        if not name:
-            if json_name:
-                name = json_name
-            else:
-                # 如果仍然没有，则使用 "[N/A] " + interactNameTextMapHash
-                name = f"[N/A] {interact_name_text_map_hash}"
-        
-        # 如果 name 是空字符串，也将其替换为默认值
+        if not name and json_name:
+            name = json_name
+            
+        # 检查是否跳过无Json名称资源
+        if not_generate_no_json_name_res and not json_name:
+            logger.warning(f"跳过实体ID: {item_id}，因为它没有 Json 名称。")
+            continue
+            
+        # 检查是否跳过无正式名称资源
+        if not_generate_no_text_map_name_res and not name:
+            logger.warning(f"跳过实体ID: {item_id}，因为它没有正式名称。")
+            continue
+            
+        # 如果仍然没有名称，则使用默认值
         if not name:
             name = f"[N/A] {interact_name_text_map_hash}"
 

@@ -2,7 +2,7 @@ import os
 import json
 from loguru import logger
 
-def generate_gcg_res_monsters(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_monsters(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 GCG 怪物资源文件 Monsters.txt，包含怪物ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -53,7 +53,17 @@ def generate_gcg_res_monsters(output_dir, excel_bin_output_path, text_map_file_p
         monster_id = item.get('id')
         name_text_map_hash = item.get('nameTextMapHash')
 
+        # 根据 not_generate_no_json_name_res 跳过没有 Json 名称的资源
+        if not_generate_no_json_name_res and not name_text_map_hash:
+            logger.warning(f"跳过怪物ID: {monster_id}，因为它没有 Json 名称。")
+            continue
+
         name = text_map.get(str(name_text_map_hash))
+
+        # 根据 not_generate_no_text_map_name_res 跳过没有正式名称的资源
+        if not_generate_no_text_map_name_res and not name:
+            logger.warning(f"跳过怪物ID: {monster_id}，因为它没有正式名称。")
+            continue
 
         if not name:
             name = f"[N/A] {name_text_map_hash}"

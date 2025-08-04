@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_artifact(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_artifact(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 Artifact.txt 文件，包含圣遗物ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -54,8 +54,19 @@ def generate_gcg_res_artifact(output_dir, excel_bin_output_path, text_map_file_p
         item_id = item.get('id')
         name_text_map_hash = item.get('nameTextMapHash')
 
+        # 根据 not_generate_no_json_name_res 跳过没有 Json 名称的资源
+        if not_generate_no_json_name_res and not name_text_map_hash:
+            logger.warning(f"跳过圣遗物ID: {item_id}，因为它没有 Json 名称。")
+            continue
+
         # 获取圣遗物名称，如果不存在则使用默认值
         name = text_map.get(str(name_text_map_hash))
+
+        # 根据 not_generate_no_text_map_name_res 跳过没有正式名称的资源
+        if not_generate_no_text_map_name_res and not name:
+            logger.warning(f"跳过圣遗物ID: {item_id}，因为它没有正式名称。")
+            continue
+
         if not name:
             name = f"[N/A] {name_text_map_hash}"
 

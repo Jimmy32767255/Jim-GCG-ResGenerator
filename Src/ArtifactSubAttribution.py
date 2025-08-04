@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_artifact_sub_attribution(output_dir, excel_bin_output_path, text_map_file_path):
+def generate_gcg_res_artifact_sub_attribution(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
     """
     生成 ArtifactSubAttribution.txt 文件，包含圣遗物副属性ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -56,7 +56,15 @@ def generate_gcg_res_artifact_sub_attribution(output_dir, excel_bin_output_path,
         name = prop_type
 
         if not name:
+            if not_generate_no_json_name_res:
+                logger.warning(f"跳过生成无Json名称的圣遗物副属性资源: {artifact_sub_attribution_id}")
+                continue
             name = f"[N/A] {prop_type}"
+        
+        # 对于圣遗物副属性，propType就是其名称，所以不需要从text_map中获取
+        # if not name and not_generate_no_text_map_name_res:
+        #     logger.warning(f"跳过生成无正式名称的圣遗物副属性资源: {artifact_sub_attribution_id}")
+        #     continue
         
         output_lines.append(f"{artifact_sub_attribution_id}:{name}")
 
