@@ -150,9 +150,8 @@ def generate_resources_core(output_dir, grasscutter_res_origin_path, gcg_res_ori
                         (generate_gcg_res_gacha_banner_title, (current_output_dir, os.path.join(gcg_res_origin_path, "GachaBannerTitle.txt"))),
                         (generate_gcg_res_player_property, (current_output_dir, os.path.join(gcg_res_origin_path, "PlayerProperty.txt"))),
                         (generate_gcg_res_scene, (current_output_dir, os.path.join(excel_bin_output_path, "SceneExcelConfigData.json"))),
-                        (generate_gcg_res_shop_type, (current_output_dir, os.path.join(excel_bin_output_path, "ShopExcelConfigData.json"), not_generate_no_json_name_res, not_generate_no_text_map_name_res)),
+                        (generate_gcg_res_shop_type, (current_output_dir, os.path.join(excel_bin_output_path, "ShopExcelConfigData.json"))),
                         (generate_gcg_res_weather, (current_output_dir, excel_bin_output_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res)),
-                        (generate_gcg_res_scene_tag, (current_output_dir, os.path.join(excel_bin_output_path, "SceneTagExcelConfigData.json"), not_generate_no_json_name_res, not_generate_no_text_map_name_res))
                     ])
 
                     if generation_tasks:
@@ -183,7 +182,7 @@ def generate_resources_core(output_dir, grasscutter_res_origin_path, gcg_res_ori
         generate_gcg_res_permissions(output_dir, os.path.join(gcg_res_origin_path, "Permissions.txt"))
         generate_gcg_res_scene_tag(output_dir, os.path.join(gcg_res_origin_path, "SceneTag.txt"))
         generate_gcg_res_weapon_color(output_dir, os.path.join(gcg_res_origin_path, "WeaponColor.txt"))
-        generate_gcg_res_weather(output_dir, excel_bin_output_path)
+        generate_gcg_res_weather(output_dir, excel_bin_output_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res)
     except Exception as e:
         logger.error(f"复制全局资源文件时出错: {e}")
 
