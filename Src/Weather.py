@@ -2,7 +2,9 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_weather(output_dir, excel_bin_output_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
+import json
+
+def generate_gcg_res_weather(output_dir, excel_bin_output_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res, added_mode):
     """
     生成 Weather.txt 文件，包含天气区域ID和对应的名称。
     """
@@ -30,9 +32,27 @@ def generate_gcg_res_weather(output_dir, excel_bin_output_path, not_generate_no_
         logger.error(f"读取天气数据文件 {weather_data_file_path} 失败: {e}")
         return
 
+    output_file_path = os.path.join(output_dir, "Weather.txt")
+
+    existing_weather_ids = set()
+    if added_mode and os.path.exists(output_file_path):
+        try:
+            with open(output_file_path, 'r', encoding='latin-1') as f:
+                for line in f:
+                    if ':' in line:
+                        existing_weather_ids.add(line.split(':')[0].strip())
+            logger.info(f"在补充模式下读取现有 Weather.txt 文件，已存在 {len(existing_weather_ids)} 个天气区域ID。")
+        except Exception as e:
+            logger.warning(f"读取现有 Weather.txt 文件失败，将重新生成所有内容: {e}")
+            existing_weather_ids.clear()
+
     output_lines = []
 
     for item in weather_excel_config_data:
+        weather_area_id = str(item.get('weatherAreaId'))
+        if added_mode and weather_area_id in existing_weather_ids:
+            logger.debug(f"在补充模式下跳过已存在的天气区域ID: {weather_area_id}")
+            continue
         weather_area_id = item.get('weatherAreaId')
         weather_name = item.get('profileName')
 
@@ -54,7 +74,9 @@ def generate_gcg_res_weather(output_dir, excel_bin_output_path, not_generate_no_
 
     output_file_path = os.path.join(output_dir, "Weather.txt")
     try:
-        with open(output_file_path, 'w', encoding='latin-1') as f:
+        # 根据 added_mode 决定写入模式
+        write_mode = 'a' if added_mode else 'w'
+        with open(output_file_path, write_mode, encoding='latin-1') as f:
             for line in output_lines:
                 f.write(line + '\n')
         logger.info(f"成功生成 {output_file_path} 文件")

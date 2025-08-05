@@ -4,7 +4,7 @@ from loguru import logger
 
 import json
 
-def generate_gcg_res_weapon(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
+def generate_gcg_res_weapon(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res, added_mode):
     """
     生成 Weapon.txt 文件，包含武器ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -49,8 +49,24 @@ def generate_gcg_res_weapon(output_dir, excel_bin_output_path, text_map_file_pat
         logger.error(f"读取文本映射文件 {text_map_file_path} 失败: {e}")
         return
 
+    existing_weapon_ids = set()
+    if added_mode and os.path.exists(output_file_path):
+        try:
+            with open(output_file_path, 'r', encoding='latin-1') as f:
+                for line in f:
+                    if ':' in line:
+                        existing_weapon_ids.add(line.split(':')[0].strip())
+            logger.info(f"在补充模式下读取现有 Weapon.txt 文件，已存在 {len(existing_weapon_ids)} 个武器ID。")
+        except Exception as e:
+            logger.warning(f"读取现有 Weapon.txt 文件失败，将重新生成所有内容: {e}")
+            existing_weapon_ids.clear()
+
     output_lines = []
     for item in weapon_excel_config_data:
+        weapon_id = str(item.get('id'))
+        if added_mode and weapon_id in existing_weapon_ids:
+            logger.debug(f"在补充模式下跳过已存在的武器ID: {weapon_id}")
+            continue
         weapon_id = item.get('id')
         name_text_map_hash = item.get('nameTextMapHash')
 
@@ -72,7 +88,9 @@ def generate_gcg_res_weapon(output_dir, excel_bin_output_path, text_map_file_pat
         output_lines.append(f"{weapon_id}:{name}")
 
     try:
-        with open(output_file_path, 'w', encoding='latin-1') as f:
+        # 根据 added_mode 决定写入模式
+        write_mode = 'a' if added_mode else 'w'
+        with open(output_file_path, write_mode, encoding='latin-1') as f:
             for line in output_lines:
                 f.write(line + '\n')
         logger.info(f"成功生成 {output_file_path} 文件，共 {len(output_lines)} 行")

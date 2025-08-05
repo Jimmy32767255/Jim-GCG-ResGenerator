@@ -54,6 +54,10 @@ class GCGResGeneratorGUI(QMainWindow):
         self.generate_option_group.addButton(self.generate_all_radio)
         self.generate_option_group.addButton(self.generate_no_json_name_radio)
         self.generate_option_group.addButton(self.generate_no_text_map_name_radio)
+
+        # 补充模式复选框
+        self.added_mode_checkbox = QCheckBox("启用补充模式 (先复制再生成缺失资源)")
+        self.added_mode_checkbox.setChecked(False) # 默认不启用
         
         # 生成按钮
         self.generate_button = QPushButton("生成资源")
@@ -73,6 +77,7 @@ class GCGResGeneratorGUI(QMainWindow):
         layout.addWidget(self.generate_all_radio)
         layout.addWidget(self.generate_no_json_name_radio)
         layout.addWidget(self.generate_no_text_map_name_radio)
+        layout.addWidget(self.added_mode_checkbox)
         layout.addWidget(self.generate_button)
         
         central_widget.setLayout(layout)
@@ -95,13 +100,15 @@ class GCGResGeneratorGUI(QMainWindow):
         generate_all = self.generate_all_radio.isChecked()
         not_generate_no_json_name_res = self.generate_no_json_name_radio.isChecked()
         not_generate_no_text_map_name_res = self.generate_no_text_map_name_radio.isChecked()
+        added_mode = self.added_mode_checkbox.isChecked()
 
         try:
             generate_resources_core(output_dir, grasscutter_dir, gcg_dir, 
                                     enable_fallback_language=enable_fallback_language,
                                     generate_all=generate_all,
                                     not_generate_no_json_name_res=not_generate_no_json_name_res,
-                                    not_generate_no_text_map_name_res=not_generate_no_text_map_name_res)
+                                    not_generate_no_text_map_name_res=not_generate_no_text_map_name_res,
+                                    added_mode=added_mode)
             QMessageBox.information(self, "成功", "资源生成完成")
         except Exception as e:
             QMessageBox.critical(self, "错误", f"资源生成失败: {e}")

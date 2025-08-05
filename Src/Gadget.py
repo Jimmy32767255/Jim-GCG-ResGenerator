@@ -2,7 +2,8 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
+import json
+def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res, added_mode=False):
     """
     生成 Gadget.txt 文件，包含实体ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -48,9 +49,27 @@ def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_pat
         return
 
     output_lines = []
+    existing_items = set()
+
+    # 如果是补充模式，尝试读取现有文件内容
+    if added_mode and os.path.exists(output_file_path):
+        try:
+            with open(output_file_path, 'r', encoding='latin-1') as f:
+                for line in f:
+                    parts = line.strip().split(':', 1)
+                    if len(parts) == 2:
+                        existing_items.add(parts[0])
+            logger.info(f"在补充模式下，已读取 {len(existing_items)} 个现有实体。")
+        except Exception as e:
+            logger.warning(f"补充模式下读取现有文件失败，将完全重新生成: {e}")
+            existing_items.clear() # 清空，强制完全重新生成
 
     for item in gadget_excel_config_data:
-        item_id = item.get('id')
+        item_id = str(item.get('id'))
+
+        # 如果是补充模式且该项已存在，则跳过
+        if added_mode and item_id in existing_items:
+            continue
         json_name = item.get('jsonName')
         interact_name_text_map_hash = item.get('interactNameTextMapHash')
 
@@ -80,7 +99,9 @@ def generate_gcg_res_gadget(output_dir, excel_bin_output_path, text_map_file_pat
         output_lines.append(f"{item_id}:{name}")
 
     try:
-        with open(output_file_path, 'w', encoding='latin-1') as f:
+        # 根据 added_mode 决定写入模式
+        write_mode = 'a' if added_mode else 'w'
+        with open(output_file_path, write_mode, encoding='latin-1') as f:
             for line in output_lines:
                 f.write(line + '\n')
         logger.info(f"成功生成 {output_file_path} 文件")

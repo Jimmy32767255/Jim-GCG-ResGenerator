@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res):
+def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res, added_mode):
     """
     生成 Avatar.txt 文件，包含角色ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -42,6 +42,21 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
         return
 
     output_lines = []
+    existing_ids = set()
+
+    output_file_path = os.path.join(output_dir, "Avatar.txt")
+
+    if added_mode and os.path.exists(output_file_path):
+        try:
+            with open(output_file_path, 'r', encoding='latin-1') as f:
+                for line in f:
+                    parts = line.strip().split(':', 1)
+                    if len(parts) > 0:
+                        existing_ids.add(parts[0])
+            logger.info(f"在补充模式下，已读取 {output_file_path} 中现有的角色ID。")
+        except IOError as e:
+            logger.error(f"错误：读取现有文件 {output_file_path} 失败: {e}")
+            added_mode = False # 如果读取失败，则退回到完全生成模式
     for item in avatar_excel_config_data:
         avatar_id = item.get('id')
         name_text_map_hash = item.get('nameTextMapHash')
@@ -54,13 +69,16 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
                 continue
             name = f"[N/A] {name_text_map_hash}"
         
+        if added_mode and str(avatar_id) in existing_ids:
+            logger.info(f"在补充模式下，跳过已存在的角色ID: {avatar_id}")
+            continue
         output_lines.append(f"{avatar_id}:{name}")
 
     try:
-        output_file_path = os.path.join(output_dir, "Avatar.txt")
-        with open(output_file_path, 'w', encoding='latin-1') as f:
+        mode = 'a' if added_mode else 'w'
+        with open(output_file_path, mode, encoding='latin-1') as f:
             for line in output_lines:
                 f.write(line + '\n')
-        logger.info(f"成功生成 {output_file_path} 文件，共 {len(output_lines)} 行")
+        logger.info(f"成功{'追加' if added_mode else '生成'} {output_file_path} 文件，共 {len(output_lines)} 行")
     except IOError as e:
         logger.error(f"错误：写入文件 {output_file_path} 时发生错误：{e}")

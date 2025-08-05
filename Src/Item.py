@@ -2,7 +2,7 @@ import json
 import os
 from loguru import logger
 
-def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res=False, not_generate_no_text_map_name_res=False):
+def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path, not_generate_no_json_name_res=False, not_generate_no_text_map_name_res=False, added_mode=False):
     """
     生成 Item.txt 文件，包含物品ID和对应的中文名称。
     如果名称不存在，则使用默认值。
@@ -48,9 +48,30 @@ def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path,
         return
 
     output_lines = []
+    existing_item_ids = set()
+
+    if added_mode and os.path.exists(output_file_path):
+        logger.info(f"补充模式已启用，正在读取现有文件 {output_file_path}...")
+        try:
+            with open(output_file_path, 'r', encoding='latin-1') as f:
+                for line in f:
+                    parts = line.strip().split(':')
+                    if len(parts) > 0:
+                        existing_item_ids.add(parts[0])
+            logger.info(f"已读取 {len(existing_item_ids)} 个现有物品ID。")
+        except Exception as e:
+            logger.error(f"读取现有文件 {output_file_path} 失败: {e}")
+            # 即使读取失败，也继续生成，但不进行增量跳过
+
+
 
     for item in item_data:
-        item_id = item.get('id')
+        item_id = str(item.get('id'))
+
+        if added_mode and item_id in existing_item_ids:
+            logger.debug(f"补充模式：跳过已存在的物品ID {item_id}")
+            continue
+
         name_text_map_hash = item.get('nameTextMapHash')
 
         name = text_map.get(str(name_text_map_hash))
@@ -71,7 +92,9 @@ def generate_gcg_res_item(output_dir, excel_bin_output_path, text_map_file_path,
         output_lines.append(f"{item_id}:{name}")
 
     try:
-        with open(output_file_path, 'w', encoding='latin-1') as f:
+        # 根据 added_mode 决定写入模式
+        write_mode = 'a' if added_mode else 'w'
+        with open(output_file_path, write_mode, encoding='latin-1') as f:
             for line in output_lines:
                 f.write(line + '\n')
         logger.info(f"成功生成 {output_file_path} 文件")
