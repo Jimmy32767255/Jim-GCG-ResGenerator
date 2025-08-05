@@ -47,31 +47,23 @@ def generate_gcg_res_monsters(output_dir, excel_bin_output_path, text_map_file_p
         logger.error(f"读取文本映射文件 {text_map_file_path} 失败: {e}")
         return
 
-    output_lines = []
-    existing_monster_ids = set()
+    all_items = {}
 
     if added_mode and os.path.exists(output_file_path):
         logger.info(f"补充模式已启用，正在读取现有文件 {output_file_path}...")
         try:
             with open(output_file_path, 'r', encoding='latin-1') as f:
                 for line in f:
-                    parts = line.strip().split(':')
-                    if len(parts) > 0:
-                        existing_monster_ids.add(parts[0])
-            logger.info(f"已读取 {len(existing_monster_ids)} 个现有怪物ID。")
+                    parts = line.strip().split(':', 1)
+                    if len(parts) == 2:
+                        all_items[parts[0]] = parts[1]
+            logger.info(f"已读取 {len(all_items)} 个现有怪物ID。")
         except Exception as e:
-            logger.error(f"读取现有文件 {output_file_path} 失败: {e}")
-            # 即使读取失败，也继续生成，但不进行增量跳过
-
-
+            logger.warning(f"补充模式下读取现有文件失败，将完全重新生成: {e}")
+            all_items.clear() # 清空，强制完全重新生成
 
     for item in monster_data:
         monster_id = str(item.get('id'))
-
-        if added_mode and monster_id in existing_monster_ids:
-            logger.debug(f"补充模式：跳过已存在的怪物ID {monster_id}")
-            continue
-
         name_text_map_hash = item.get('nameTextMapHash')
 
         # 根据 not_generate_no_json_name_res 跳过没有 Json 名称的资源
@@ -90,14 +82,15 @@ def generate_gcg_res_monsters(output_dir, excel_bin_output_path, text_map_file_p
             name = f"[N/A] {name_text_map_hash}"
 
         if name:
-            output_lines.append(f"{monster_id}:{name}")
+            all_items[monster_id] = name
+
+    # 将所有条目按 ID 排序
+    sorted_items = sorted(all_items.items(), key=lambda x: int(x[0]))
 
     try:
-        # 根据 added_mode 决定写入模式
-        write_mode = 'a' if added_mode else 'w'
-        with open(output_file_path, write_mode, encoding='latin-1') as f:
-            for line in output_lines:
-                f.write(line + '\n')
-        logger.info(f"成功生成 {output_file_path} 文件")
+        with open(output_file_path, 'w', encoding='latin-1') as f:
+            for monster_id, name in sorted_items:
+                f.write(f"{monster_id}:{name}\n")
+        logger.info(f"成功生成 {output_file_path} 文件，共 {len(sorted_items)} 行")
     except IOError as e:
         logger.error(f"错误：写入文件 {output_file_path} 时发生错误：{e}")

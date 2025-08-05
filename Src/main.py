@@ -161,8 +161,8 @@ def generate_resources_core(output_dir, grasscutter_res_origin_path, gcg_res_ori
                         (generate_gcg_res_gacha_banner_prefab, (current_output_dir, os.path.join(gcg_res_origin_path, "GachaBannerPrefab.txt"))),
                         (generate_gcg_res_gacha_banner_title, (current_output_dir, os.path.join(gcg_res_origin_path, "GachaBannerTitle.txt"))),
                         (generate_gcg_res_player_property, (current_output_dir, os.path.join(gcg_res_origin_path, "PlayerProperty.txt"))),
-                        (generate_gcg_res_scene, (current_output_dir, os.path.join(excel_bin_output_path, "SceneExcelConfigData.json"))),
-                        (generate_gcg_res_shop_type, (current_output_dir, os.path.join(excel_bin_output_path, "ShopExcelConfigData.json"))),
+                        (generate_gcg_res_scene, (current_output_dir, excel_bin_output_path, current_text_map_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res, added_mode)),
+                        (generate_gcg_res_shop_type, (current_output_dir, excel_bin_output_path, current_text_map_path, not_generate_no_json_name_res, not_generate_no_text_map_name_res, added_mode)),
                     ]
 
                     if generation_tasks:

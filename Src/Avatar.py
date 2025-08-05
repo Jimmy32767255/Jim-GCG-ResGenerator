@@ -41,8 +41,7 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
         logger.error(f"读取文本映射文件 {os.path.join(text_map_file_path, 'TextMap.json')} 失败: {e}")
         return
 
-    output_lines = []
-    existing_ids = set()
+    all_items = {}
 
     output_file_path = os.path.join(output_dir, "Avatar.txt")
 
@@ -51,14 +50,15 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
             with open(output_file_path, 'r', encoding='latin-1') as f:
                 for line in f:
                     parts = line.strip().split(':', 1)
-                    if len(parts) > 0:
-                        existing_ids.add(parts[0])
-            logger.info(f"在补充模式下，已读取 {output_file_path} 中现有的角色ID。")
-        except IOError as e:
-            logger.error(f"错误：读取现有文件 {output_file_path} 失败: {e}")
-            added_mode = False # 如果读取失败，则退回到完全生成模式
+                    if len(parts) == 2:
+                        all_items[parts[0]] = parts[1]
+            logger.info(f"在补充模式下，已读取 {len(all_items)} 个现有角色。")
+        except Exception as e:
+            logger.warning(f"补充模式下读取现有文件失败，将完全重新生成: {e}")
+            all_items.clear() # 清空，强制完全重新生成
+
     for item in avatar_excel_config_data:
-        avatar_id = item.get('id')
+        avatar_id = str(item.get('id'))
         name_text_map_hash = item.get('nameTextMapHash')
 
         # 获取角色名称，如果不存在则使用默认值
@@ -69,16 +69,15 @@ def generate_gcg_res_avatar(output_dir, excel_bin_output_path, text_map_file_pat
                 continue
             name = f"[N/A] {name_text_map_hash}"
         
-        if added_mode and str(avatar_id) in existing_ids:
-            logger.info(f"在补充模式下，跳过已存在的角色ID: {avatar_id}")
-            continue
-        output_lines.append(f"{avatar_id}:{name}")
+        all_items[avatar_id] = name
+
+    # 将所有条目按 ID 排序
+    sorted_items = sorted(all_items.items(), key=lambda x: int(x[0]))
 
     try:
-        mode = 'a' if added_mode else 'w'
-        with open(output_file_path, mode, encoding='latin-1') as f:
-            for line in output_lines:
-                f.write(line + '\n')
-        logger.info(f"成功{'追加' if added_mode else '生成'} {output_file_path} 文件，共 {len(output_lines)} 行")
+        with open(output_file_path, 'w', encoding='latin-1') as f:
+            for avatar_id, name in sorted_items:
+                f.write(f"{avatar_id}:{name}\n")
+        logger.info(f"成功生成 {output_file_path} 文件，共 {len(sorted_items)} 行")
     except IOError as e:
         logger.error(f"错误：写入文件 {output_file_path} 时发生错误：{e}")

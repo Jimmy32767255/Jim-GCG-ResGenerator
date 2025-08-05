@@ -50,28 +50,23 @@ def generate_gcg_res_achievement(output_dir, excel_bin_output_path, text_map_fil
         logger.error(f"读取文本映射文件 {text_map_file_path} 失败: {e}")
         return
 
-    output_lines = []
-    existing_items = set()
+    all_items = {}
 
-    # 如果是补充模式，尝试读取现有文件内容
+    # 如果是补充模式，尝试读取现有文件内容并填充 all_items
     if added_mode and os.path.exists(output_file_path):
         try:
             with open(output_file_path, 'r', encoding='latin-1') as f:
                 for line in f:
                     parts = line.strip().split(':', 1)
                     if len(parts) == 2:
-                        existing_items.add(parts[0])
-            logger.info(f"在补充模式下，已读取 {len(existing_items)} 个现有成就。")
+                        all_items[parts[0]] = parts[1]
+            logger.info(f"在补充模式下，已读取 {len(all_items)} 个现有成就。")
         except Exception as e:
             logger.warning(f"补充模式下读取现有文件失败，将完全重新生成: {e}")
-            existing_items.clear() # 清空，强制完全重新生成
+            all_items.clear() # 清空，强制完全重新生成
 
     for item in achievement_excel_config_data:
         item_id = str(item.get('id'))
-
-        # 如果是补充模式且该项已存在，则跳过
-        if added_mode and item_id in existing_items:
-            continue
         title_text_map_hash = item.get('titleTextMapHash')
 
         # 尝试从 TextMap 中查找对应 ID 的名称
@@ -87,19 +82,16 @@ def generate_gcg_res_achievement(output_dir, excel_bin_output_path, text_map_fil
             else:
                 name = f"[N/A] {title_text_map_hash}"
 
-        output_lines.append(f"{item_id}:{name}")
+        all_items[item_id] = name
+
+    # 将所有条目按 ID 排序
+    sorted_items = sorted(all_items.items(), key=lambda x: int(x[0]))
 
     # 写入 Achievement.txt
     try:
-        if added_mode:
-            with open(output_file_path, 'a', encoding='latin-1') as f:
-                for line in output_lines:
-                    f.write(line + '\n')
-            logger.info(f"成功向 {output_file_path} 追加 {len(output_lines)} 行新成就数据")
-        else:
-            with open(output_file_path, 'w', encoding='latin-1') as f:
-                for line in output_lines:
-                    f.write(line + '\n')
-            logger.info(f"成功生成 {output_file_path}，共 {len(output_lines)} 行")
+        with open(output_file_path, 'w', encoding='latin-1') as f:
+            for item_id, name in sorted_items:
+                f.write(f"{item_id}:{name}\n")
+        logger.info(f"成功生成 {output_file_path}，共 {len(sorted_items)} 行")
     except IOError as e:
         logger.error(f"错误：写入文件 {output_file_path} 失败: {e}")

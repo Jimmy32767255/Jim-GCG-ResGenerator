@@ -47,22 +47,21 @@ def generate_gcg_res_cutscene(output_dir, excel_bin_output_path, text_map_file_p
         logger.error(f"读取文本映射文件 {text_map_file_path} 失败: {e}")
         return
 
-    existing_ids = set()
+    all_items = {}
     if added_mode and os.path.exists(output_file_path):
         try:
-            with open(output_file_path, 'r', encoding='latin-1') as f:
+            with open(output_file_path, 'r', encoding="") as f:
                 for line in f:
                     parts = line.strip().split(':', 1)
-                    if len(parts) > 0:
-                        existing_ids.add(parts[0])
-            logger.info(f"在补充模式下，已读取 {output_file_path} 中现有的过场动画ID。")
-        except IOError as e:
-            logger.error(f"错误：读取现有文件 {output_file_path} 失败: {e}")
-            added_mode = False # 如果读取失败，则退回到完全生成模式
+                    if len(parts) == 2:
+                        all_items[parts[0]] = parts[1]
+            logger.info(f"在补充模式下，已读取 {len(all_items)} 个现有过场动画。")
+        except Exception as e:
+            logger.warning(f"补充模式下读取现有文件失败，将完全重新生成: {e}")
+            all_items.clear() # 清空，强制完全重新生成
 
-    output_lines = []
     for entry in cutscene_data:
-        cutscene_id = entry.get('id')
+        cutscene_id = str(entry.get('id'))
         cutscene_path = entry.get('path')
 
         if cutscene_id is not None:
@@ -75,16 +74,15 @@ def generate_gcg_res_cutscene(output_dir, excel_bin_output_path, text_map_file_p
                     continue
                 cutscene_name = f"[N/A] {cutscene_id}"
 
-            if added_mode and str(cutscene_id) in existing_ids:
-                logger.info(f"在补充模式下，跳过已存在的过场动画ID: {cutscene_id}")
-                continue
-            output_lines.append(f"{cutscene_id}:{cutscene_name}")
+            all_items[cutscene_id] = cutscene_name
+
+    # 将所有条目按 ID 排序
+    sorted_items = sorted(all_items.items(), key=lambda x: int(x[0]))
 
     try:
-        mode = 'a' if added_mode else 'w'
-        with open(output_file_path, mode, encoding='latin-1') as f:
-            for line in output_lines:
-                f.write(line + '\n')
-        logger.info(f"成功{'追加' if added_mode else '生成'} {output_file_path} 文件")
+        with open(output_file_path, 'w', encoding='latin-1') as f:
+            for cutscene_id, cutscene_name in sorted_items:
+                f.write(f"{cutscene_id}:{cutscene_name}\n")
+        logger.info(f"成功生成 {output_file_path} 文件，共 {len(sorted_items)} 行")
     except IOError as e:
         logger.error(f"错误：写入文件 {output_file_path} 时发生错误：{e}")
